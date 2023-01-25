@@ -1,0 +1,56 @@
+<html>
+<head>
+  <style>
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .circle {
+        width: var(--diameter);
+        height: var(--diameter);
+        border-radius: 50%;
+        border-color: var(--color);
+        background: var(--color);
+    }
+    .arrow {
+        width: 0;
+        height: 0;
+        border: calc(var(--diameter) / 16) solid transparent;
+    }
+  </style>
+</head>
+<body style="background: lightblue;">
+  <div class="center circle" style="
+      --diameter: 4cm;
+      opacity: .5;
+      overflow: hidden;
+      --color: black;
+      background: none;
+  ">
+    <div class="center circle" style="
+        --diameter: 40%;
+    "></div>
+    <div class="center arrow" style="
+        border-left-color: inherit;
+        left: 87.5%;
+    "></div>
+    <div class="center arrow" style="
+        border-right-color: inherit;
+        left: 12.5%;
+    "></div>
+    <div class="center arrow" style="
+        border-top-color: inherit;
+        top: 87.5%;
+    "></div>
+    <div class="center arrow" style="
+        border-bottom-color: inherit;
+        top: 12.5%;
+    "></div>
+    <div class="center circle" style="
+        opacity: .5;
+    "></div>
+  </div>
+</body>
+</html>
