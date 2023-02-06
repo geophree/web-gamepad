@@ -5,34 +5,53 @@
   </style>
 </head>
 <body style="background: lightblue;">
-  <div style="font-size: 10vh">
+  <!-- <div style="font-size: 10vh">
     a: <span class="a"></span><br/>
     b: <span class="b"></span><br/>
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
   </div>
   <thumbstick-input id="thumb1"></thumbstick-input>
-  <button-cluster-input></button-cluster-input>
+  <button-cluster-input></button-cluster-input> -->
+  <gamepad-display></gamepad-display>
+  <div id="extras" style="font-size: 2vw; font-family: sans">
+  </div>
+
   <script type="module">
     import './thumbstick.js';
     import './button_cluster.js';
- 
-    // value getter for axes, dispatch InputEvent when it changes
-    const a = document.querySelector('.a');
-    const b = document.querySelector('.b');
-    const x = document.querySelector('.x');
-    const y = document.querySelector('.y');
-    const input = document.querySelector('button-cluster-input');
+    import './gamepad_display.js';
+    const display = document.querySelector('gamepad-display');
+    const $extras = document.querySelector('#extras');
+    let lastTimestamp = 0;
     const updateDisplay = () => {
-      let [_a, _b, _x, _y] = input.value;
-      a.textContent = _a.toFixed(5);
-      b.textContent = _b.toFixed(5);
-      x.textContent = _x.toFixed(5);
-      y.textContent = _y.toFixed(5);
-    };
-
-    input.addEventListener('input', updateDisplay);
+      const gamepad = navigator.getGamepads()[0];
+      const timestamp = gamepad?.timestamp;
+      if (timestamp != lastTimestamp) {
+        const extras = display.updateState(gamepad) || [];
+        $extras.innerHTML = extras.map(e => e.join(': ')).join('<br/>');
+        lastTimestamp = timestamp;
+      }
+      requestAnimationFrame(updateDisplay);
+    }
     updateDisplay();
+ 
+    // // value getter for axes, dispatch InputEvent when it changes
+    // const a = document.querySelector('.a');
+    // const b = document.querySelector('.b');
+    // const x = document.querySelector('.x');
+    // const y = document.querySelector('.y');
+    // const input = document.querySelector('button-cluster-input');
+    // const updateDisplay = () => {
+    //   let [_a, _b, _x, _y] = input.value;
+    //   a.textContent = _a.toFixed(5);
+    //   b.textContent = _b.toFixed(5);
+    //   x.textContent = _x.toFixed(5);
+    //   y.textContent = _y.toFixed(5);
+    // };
+
+    // input.addEventListener('input', updateDisplay);
+    // updateDisplay();
 
 
     // // value getter for axes, dispatch InputEvent when it changes
