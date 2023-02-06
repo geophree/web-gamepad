@@ -2,156 +2,62 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
   <style>
-    .thumbstick {
-        touch-action: none;
-    }
-    .thumbstick * {
-        pointer-events: none;
-    }
-    .center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    .circle {
-        touch-action: none;
-        width: var(--diameter);
-        height: var(--diameter);
-        border-radius: 50%;
-        border-color: var(--color);
-        background: var(--color);
-    }
-    .arrows, .arrows * {
-        touch-action: none;
-        width: 100%;
-        height: 100%;
-    }
-    .arrows > div {
-        position: absolute;
-    }
-    .arrows > :nth-child(2) {
-        transform: rotate(90deg);
-    }
-    .arrows > :nth-child(3) {
-        transform: rotate(180deg);
-    }
-    .arrows > :nth-child(4) {
-        transform: rotate(-90deg);
-    }
-    .arrows > :nth-child(5) {
-        transform: rotate(45deg);
-    }
-    .arrows > :nth-child(6) {
-        transform: rotate(135deg);
-    }
-    .arrows > :nth-child(7) {
-        transform: rotate(-135deg);
-    }
-    .arrows > :nth-child(8) {
-        transform: rotate(-45deg);
-    }
-    .arrows > div > div {
-        transform: translate(calc( ( 100% + var(--center-diameter) ) / 4 ));
-    }
-    .arrows > div > div > div {
-        width: var(--arrow-width);
-        height: var(--arrow-width);
-        transform: translate(-25%, -50%);
-        overflow: hidden;
-    }
-    .arrows > div > div > div > div {
-        background: var(--color);
-        transform: translate(-71%) rotate(45deg);
-    }
   </style>
 </head>
 <body style="background: lightblue;">
-  <div class="center circle thumbstick" style="
-      --color: black;
-      --diameter: 4cm;
-      --center-diameter: 40%;
-      --arrow-width: 12%;
-      opacity: .5;
-      overflow: hidden;
-      background: none;
-  ">
-    <div class="center circle" style="
-        opacity: .5;
-    "></div>
-    <div class="center arrows">
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-    </div>
-    <div class="center" style="
-        width: var(--center-diameter);
-        height: var(--center-diameter);
-    ">
-      <div class="circle nubbin" style="
-          --diameter: 100%;
-      "></div>
-    </div>
+  <div style="font-size: 10vh">
+    x: <span class="x"></span><br/>
+    y: <span class="y"></span><br/>
   </div>
-  <script>
-    const thumbstick = document.querySelector(".thumbstick");
-    if (window.matchMedia("(pointer: coarse)").matches) {
-      thumbstick.style.setProperty("--diameter", `calc(2 * ${thumbstick.style.getPropertyValue("--diameter")})`);
-    }
+  <thumbstick-input id="thumb1"></thumbstick-input>
+  <script type="module">
+    import './thumbstick.js';
+ 
+    // value getter for axes, dispatch InputEvent when it changes
+    const x = document.querySelector('.x');
+    const y = document.querySelector('.y');
+    const input = document.querySelector('#thumb1');
+    const updateDisplay = () => {
+      let [_x, _y] = input.value;
+      x.textContent = _x.toFixed(5);
+      y.textContent = _y.toFixed(5);
+    };
+
+    input.addEventListener('input', updateDisplay);
+    updateDisplay();
+
+    // // Doesn't work unless HTTPS?
+    // const accelX = document.querySelector('.x');
+    // const accelY = document.querySelector('.y');
+    // const accelZ = document.querySelector('.z');
+    // window.addEventListener('devicemotion', (e) => {
+    //   console.log(e);
+    //   accelX.textContent = e.accelerationIncludingGravity.x;
+    //   accelY.textContent = e.accelerationIncludingGravity.y;
+    //   accelZ.textContent = e.accelerationIncludingGravity.z;
+    // }, true);
+    
+    // for full gamepad:
     // if navigator.maxTouchPoints <= 1,
     // alert user that they won't have a great experience
     // detect portrait vs landscape prompt user to rotate device
     // offer to go fullscreen
     // request no sleep
-    let pointerId;
-    const nubbin = thumbstick.querySelector(".nubbin");
-    const matrix = new DOMMatrix();
-    let {width, height} = thumbstick.getBoundingClientRect();
-    let updateAxes = (horiz, vert) => {
-      if (horiz**2 + vert**2 > 1) {
-        let theta = Math.atan(vert / horiz);
-        let sign = Math.sign(horiz);
-        horiz = sign * Math.cos(theta);
-        vert = sign * Math.sin(theta);
-      }
-      // nubbin.style.transform = `translate(${horiz * width / 2}px,${vert * height / 2}px)`;
-      matrix.translateSelf(horiz * width / 2, vert * height / 2);
-      nubbin.style.transform = matrix; //.toString();
-      matrix.translateSelf(-horiz * width / 2, -vert * height / 2);
-      console.log({horiz, vert});
-    };
-    let recordXY = (e) => {
-      if (pointerId != e.pointerId) return;
-      let horiz = 2 * (e.offsetX / width) - 1;
-      let vert = 2 * (e.offsetY / height) - 1;
-      updateAxes(horiz, vert);
-      e.stopPropagation();
-      e.preventDefault();
-    };
-    let startCapture = (e) => {
-      thumbstick.removeEventListener('pointerdown', startCapture);
-      console.log('start capture');
-      let rect = thumbstick.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      pointerId = e.pointerId;
-      thumbstick.setPointerCapture(pointerId);
-      thumbstick.addEventListener('pointermove', recordXY);
-      recordXY(e);
-    };
-    let endCapture = () => {
-      thumbstick.addEventListener('pointerdown', startCapture);
-      console.log('end capture');
-      thumbstick.removeEventListener('pointermove', recordXY);
-      updateAxes(0,0);
-    };
-    thumbstick.addEventListener('lostpointercapture', endCapture);
-    endCapture();
+    // input.meta.url query params to configure
+
+    // // for mapping to onscreen controls:
+    // // from https://stackoverflow.com/a/36144688
+    // function click(x, y) {
+    //   document.elementFromPoint(x, y).dispatchEvent(
+    //     new MouseEvent('click', {
+    //       view: window,
+    //       bubbles: true,
+    //       cancelable: true,
+    //       screenX: x,
+    //       screenY: y
+    //     })
+    //   );
+    // }
   </script>
 </body>
 </html>
