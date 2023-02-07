@@ -126,6 +126,29 @@
     //     })
     //   );
     // }
+
+    // wire format:
+    // TODO(geophree): figure out connected/id/index/mapping
+    // - index implied?
+    // array of doubles
+    // - version
+    // - ??? total length?
+    // - number of gamepads
+    // - number of included gamepads (until last non-zero)
+    // - ??? list of indexes for each included gamepad?
+    // - is a gamepad:
+    //   - length of gamepad (zero means disconnected?)
+    //   - timestamp
+    //   - axes:
+    //     - number of axes
+    //     - number of included axes (until last non-zero)
+    //     - list of axes (doubles) (range: -1.0 - 1.0)
+    //   - is buttons:
+    //     - number of buttons
+    //     - number of included buttons (until last non-zero)
+    //     - list of buttons:
+    //       - double with two boolean bits (& 2 and & 4) (pressed/touched)
+    //       - the double itself is pressure (range: 0.0 - 1.0) (val %= 2)
   </script>
 </body>
 </html>
