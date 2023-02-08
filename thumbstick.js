@@ -1,7 +1,6 @@
 export class ThumbstickInput extends HTMLElement {
   $thumbstick;
   $nubbin;
-  _nubbinTransform;
   _width;
   _height;
   _value = [0, 0];
@@ -21,11 +20,8 @@ export class ThumbstickInput extends HTMLElement {
       horiz = sign * Math.cos(theta);
       vert = sign * Math.sin(theta);
     }
-    const translateX = horiz * this._width / 2;
-    const translateY = vert * this._height / 2;
-    this._nubbinTransform.translateSelf(translateX, translateY);
-    this.$nubbin.style.transform = this._nubbinTransform;
-    this._nubbinTransform.translateSelf(-translateX, -translateY);
+    this.$nubbin.style.setProperty('--horizontal-axis', horiz);
+    this.$nubbin.style.setProperty('--vertical-axis', vert);
     // TODO(geophree): make it able to switch to callback
     // callback(horiz, vert);
     this._value = [horiz, vert];
@@ -43,10 +39,9 @@ export class ThumbstickInput extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
-    this.$thumbstick = this.shadowRoot.querySelector(".thumbstick");
+    this.$thumbstick = this.shadowRoot.querySelector("#thumbstick");
     let pointerId;
-    this.$nubbin = this.$thumbstick.querySelector(".nubbin");
-    this._nubbinTransform = new DOMMatrix();
+    this.$nubbin = this.shadowRoot.querySelector("#nubbin");
     this._updateDimensions();
 
     let recordXY = ((e) => {
@@ -80,105 +75,64 @@ export class ThumbstickInput extends HTMLElement {
 
 const template = document.createElement('template');
 template.innerHTML = `
+<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
   <style>
-    .thumbstick {
-        position: relative;
-        touch-action: none;
-        opacity: .5;
-        overflow: hidden;
-        --color: black;
-        --diameter: 4cm;
-        --center-diameter: 40%;
-        --arrow-width: 12%;
+    * {
+      pointer-events: none;
+      touch-action: none;
+      fill: black;
+      --center-diameter: 40%;
+      --arrow-width: 12%;
     }
-    @media (pointer: coarse) {
-        .thumbstick {
-            --diameter: 8cm;
-        }
+    #thumbstick {
+      pointer-events: auto;
+      opacity: .5;
     }
-    .thumbstick * {
-        pointer-events: none;
+    #arrows > :nth-child(1) {
+      --angle: 0deg;
     }
-    .center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    #arrows > :nth-child(2) {
+      --angle: 90deg;
     }
-    .circle {
-        width: var(--diameter);
-        height: var(--diameter);
-        border-radius: 50%;
+    #arrows > :nth-child(3) {
+      --angle: 180deg;
     }
-    .background {
-        background: var(--color);
-        opacity: .5;
+    #arrows > :nth-child(4) {
+      --angle: -90deg;
     }
-    .arrows, .arrows * {
-        width: 100%;
-        height: 100%;
+    #arrows > * {
+      transform-origin: center;
+      transform-box: fill-box;
+      transform: rotate(var(--angle)) translate(calc(50% + var(--center-diameter) / 2)) scale(var(--arrow-width));
     }
-    .arrows > div {
-        position: absolute;
+    #arrows45 {
+      transform-origin: center;
+      transform: rotate(45deg);
     }
-    .arrows > :nth-child(2) {
-        transform: rotate(90deg);
-    }
-    .arrows > :nth-child(3) {
-        transform: rotate(180deg);
-    }
-    .arrows > :nth-child(4) {
-        transform: rotate(-90deg);
-    }
-    .arrows > :nth-child(5) {
-        transform: rotate(45deg);
-    }
-    .arrows > :nth-child(6) {
-        transform: rotate(135deg);
-    }
-    .arrows > :nth-child(7) {
-        transform: rotate(-135deg);
-    }
-    .arrows > :nth-child(8) {
-        transform: rotate(-45deg);
-    }
-    .arrows > div > div {
-        transform: translate(calc( ( 100% + var(--center-diameter) ) / 4 ));
-    }
-    .arrows > div > div > div {
-        width: var(--arrow-width);
-        height: var(--arrow-width);
-        transform: translate(-25%, -50%);
-        overflow: hidden;
-    }
-    .arrows > div > div > div > div {
-        background: var(--color);
-        transform: translate(-71%) rotate(45deg);
-    }
-    .nubbin-container {
-        --diameter: var(--center-diameter);
-    }
-    .nubbin {
-        --diameter: 100%;
-        background: var(--color);
+    #nubbin {
+      r: calc(var(--center-diameter) / 2);
+      --horizontal-axis: 0;
+      --vertical-axis: 0;
+      transform: translate(calc(var(--horizontal-axis, 0) * 50%), calc(var(--vertical-axis, 0) * 50%));
     }
   </style>
-  <div class="circle thumbstick">
-    <div class="center circle background"></div>
-    <div class="center arrows">
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-      <div><div><div class="center"><div></div></div></div></div>
-    </div>
-    <div class="center circle nubbin-container">
-      <div class="circle nubbin"></div>
-    </div>
-  </div>
+  <defs>
+    <clipPath id="bounds">
+      <use href="#thumbstick"/>
+    </clipPath>
+    <path id="arrow" d="M7.5 5l-5-5v10z"/>
+  </defs>
+  <g style="opacity: .5" clip-path="url(#bounds)">
+    <circle id="thumbstick" cx="5" cy="5" r="5"/>
+    <g id="arrows">
+      <use href="#arrow"/>
+      <use href="#arrow"/>
+      <use href="#arrow"/>
+      <use href="#arrow"/>
+    </g>
+    <use id="arrows45" href="#arrows"/>
+    <circle id="nubbin" cx="5" cy="5"/>
+  </g>
 `;
 
 window.customElements.define('thumbstick-input', ThumbstickInput);

@@ -2,23 +2,33 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
   <style>
+    thumbstick-input {
+      display: block;
+      width: 4cm;
+    }
+    @media (pointer: coarse) {
+      thumbstick-input {
+        width: 8cm;
+      }
+    }
   </style>
 </head>
 <body style="background: lightblue;">
   <gamepad-display></gamepad-display>
+  <!--
   <gamepad-display></gamepad-display>
   <gamepad-display></gamepad-display>
   <gamepad-display></gamepad-display>
-  <!-- <div style="font-size: 10vh">
+  <div style="font-size: 10vh">
     a: <span class="a"></span><br/>
     b: <span class="b"></span><br/>
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
   </div>
-  <thumbstick-input id="thumb1"></thumbstick-input>
   <button-cluster-input></button-cluster-input>
-  <div id="extras" style="font-size: 2vw; font-family: sans">
   -->
+  <thumbstick-input id="thumb1"></thumbstick-input>
+  <div id="extras" style="font-size: 2vw; font-family: sans">
   </div>
 
   <script type="module">
@@ -34,7 +44,7 @@
       displays.forEach((display, i) => {
         let lastTimestamp = 0;
         const updateDisplay = () => {
-          const gamepad = navigator.getGamepads()[i];
+          // const gamepad = navigator.getGamepads()[i];
           const timestamp = gamepad?.timestamp;
           if (timestamp != lastTimestamp) {
             const extras = display.updateState(gamepad) || [];
