@@ -2,14 +2,18 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
   <style>
-    thumbstick-input {
+    thumbstick-input, button-cluster-input {
       display: block;
       width: 4cm;
     }
     @media (pointer: coarse) {
-      thumbstick-input {
+      thumbstick-input, button-cluster-input {
         width: 8cm;
       }
+    }
+    gamepad-display {
+      display: block;
+      width: 12cm;
     }
   </style>
 </head>
@@ -25,9 +29,9 @@
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
   </div>
-  <button-cluster-input></button-cluster-input>
   -->
   <thumbstick-input id="thumb1"></thumbstick-input>
+  <button-cluster-input></button-cluster-input>
   <div id="extras" style="font-size: 2vw; font-family: sans">
   </div>
 
