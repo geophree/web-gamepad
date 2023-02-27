@@ -18,8 +18,17 @@
   </style>
 </head>
 <body style="background: lightblue;">
-  <gamepad-display></gamepad-display>
+  <div style="font-size: 10vh">
+    x: <span class="x"></span><br/>
+    y: <span class="y"></span><br/>
+    z: <span class="z"></span><br/>
+    a: <span class="a"></span><br/>
+    b: <span class="b"></span><br/>
+    g: <span class="g"></span><br/>
+    abs: <span class="abs"></span><br/>
+  </div>
   <!--
+  <gamepad-display></gamepad-display>
   <gamepad-display></gamepad-display>
   <gamepad-display></gamepad-display>
   <gamepad-display></gamepad-display>
@@ -29,13 +38,14 @@
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
   </div>
-  -->
   <thumbstick-input id="thumb1"></thumbstick-input>
   <button-cluster-input></button-cluster-input>
   <div id="extras" style="font-size: 2vw; font-family: sans">
+  -->
   </div>
 
   <script type="module">
+    import './get_gamepads.js';
     import './thumbstick.js';
     import './button_cluster.js';
     import './gamepad_display.js';
@@ -48,7 +58,7 @@
       displays.forEach((display, i) => {
         let lastTimestamp = 0;
         const updateDisplay = () => {
-          // const gamepad = navigator.getGamepads()[i];
+          const gamepad = navigator.getGamepads()[i];
           const timestamp = gamepad?.timestamp;
           if (timestamp != lastTimestamp) {
             const extras = display.updateState(gamepad) || [];
@@ -104,16 +114,64 @@
       }
     }
 
-    // // Doesn't work unless HTTPS?
-    // const accelX = document.querySelector('.x');
-    // const accelY = document.querySelector('.y');
-    // const accelZ = document.querySelector('.z');
-    // window.addEventListener('devicemotion', (e) => {
-    //   console.log(e);
-    //   accelX.textContent = e.accelerationIncludingGravity.x;
-    //   accelY.textContent = e.accelerationIncludingGravity.y;
-    //   accelZ.textContent = e.accelerationIncludingGravity.z;
-    // }, true);
+    // Doesn't work unless HTTPS, (*\.)?localhost, 127.0.0.1, or file:// urls
+    // 0.0.0.0 does *not* work.
+    {
+      const accelX = document.querySelector('.x');
+      const accelY = document.querySelector('.y');
+      const accelZ = document.querySelector('.z');
+      const a = document.querySelector('.a');
+      const b = document.querySelector('.b');
+      const g = document.querySelector('.g');
+      const abs = document.querySelector('.abs');
+      let x = 0;
+      let y = 0;
+      let z = 0;
+      let alpha = 0;
+      let beta = 0;
+      let gamma = 0;
+      let absolute = false;
+      // window.addEventListener('devicemotion', (e) => {
+      //   ({x, y, z} = e.acceleration);
+      //   ({alpha, beta, gamma} = e.rotationRate);
+      // }, true);
+      window.addEventListener('deviceorientation', (e) => {
+        ({alpha, beta, gamma, absolute} = e);
+      }, true);
+      const updateDisplay = () => {
+        accelX.textContent = x?.toFixed(3);
+        accelY.textContent = y?.toFixed(3);
+        accelZ.textContent = z?.toFixed(3);
+        a.textContent = alpha?.toFixed(3);
+        b.textContent = beta?.toFixed(3);
+        g.textContent = gamma?.toFixed(3);
+        abs.textContent = absolute;
+        requestAnimationFrame(updateDisplay);
+      };
+      updateDisplay();
+    }
+
+    {
+      // stop device from sleeping
+      let wakeLock = null;
+      const requestWakeLock = async () => {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', console.log);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+      const handleVisibilityChange = () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+          requestWakeLock();
+        }
+      }
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      requestWakeLock();
+    }
     
     // for full gamepad:
     // if navigator.maxTouchPoints <= 1,
@@ -163,6 +221,11 @@
     //     - list of buttons:
     //       - double with two boolean bits (& 2 and & 4) (pressed/touched)
     //       - the double itself is pressure (range: 0.0 - 1.0) (val %= 2)
+
+    // TODO(geophree):
+    // - thumbstick: octagon limiter (gamecube style)
+    //   - small size, goes out of its bounds
+    //     - easier to put two with d-pad and face buttons on phone
   </script>
 </body>
 </html>
