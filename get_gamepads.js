@@ -1,76 +1,104 @@
 const WRAPPED = Symbol('WRAPPED');
-function makeGetGamepads(navigator) {
-  const oldGetGamepads = navigator.getGamepads.bind(navigator);
-  let length = 4;
 
-  const proxyGamepad = (gamepad) => new Proxy(gamepad, {
-    get(target, prop) {
-      if (prop === WRAPPED) return true;
-      return target[prop];
+const proxies = [];
+const Gamepads = {
+  win: null,
+  registrants: [],
+  proxies,
+  map: [],
+
+  attach(win) {
+    // TODO: return if getGamepads is already WRAPPED?
+    const nativeTarget = new EventTarget();
+    for (const type of ["gamepadconnected", "gamepaddisconnected"]) {
+      win.addEventListener(type, (e) => {
+        const { gamepad } = e;
+        if (gamepad[WRAPPED]) return;
+
+        e.stopImmediatePropagation();
+        const event = new Event(type);
+        event.gamepad = gamepad;
+        nativeTarget.dispatchEvent(event);
+      });
     }
-  });
 
-  const getItem = (i) => {
-    const gp = oldGetGamepads()[i];
-    return gp ? proxyGamepad(gp) : undefined;
-  };
+    Gamepads.win = win;
+    const { navigator } = win;
+    Gamepads.register(nativeTarget, navigator.getGamepads.bind(navigator));
+    navigator.getGamepads = this.getGamepads.bind(this);
+    navigator.getGamepads[WRAPPED] = true;
+  },
 
-  const makeIterator = () => {
-    let index = 0;
-    const iterator = {
-      next() {
-        const done = index >= length;
-        return {
-          done,
-          value: done ? undefined : getItem(index++)
-        };
+  register(target, getGamepads) {
+    const me = this;
+    let cached;
+    const getGamepad = (index) => {
+      if (!cached) {
+        cached = getGamepads();
+        setTimeout(() => cached = undefined);
+      }
+      return cached[index];
+    }
+    const outerIndex = this.registrants.length;
+    const registrant = { index: outerIndex, target, getGamepad, map: [] };
+    this.registrants.push(registrant);
+
+    for (const type of ["gamepadconnected", "gamepaddisconnected"]) {
+      target.addEventListener(type, (e) => {
+        let { gamepad } = e;
+        let index = registrant.map[gamepad.index];
+        if (index == null) {
+          index = proxies.length;
+          registrant.map[gamepad.index] = index;
+          me.map[index] = [outerIndex, gamepad.index];
+        }
+        gamepad = proxies[index];
+        if (gamepad == null) {
+          gamepad = me.proxyGamepad(index);
+          proxies[index] = gamepad;
+        }
+        const event = new Event(type);
+        event.gamepad = gamepad;
+        me.win.dispatchEvent(event);
+      })
+    }
+
+    target.addEventListener("gamepaddisconnected", (e) => {
+      let { gamepad } = e;
+      let index = registrant.map[gamepad.index];
+      setTimeout(() => me.proxies[index] = null);
+    })
+  },
+
+  proxyGamepad(index) {
+    const me = this;
+    return new Proxy({}, {
+      set: () => false,
+      get(target, prop, receiver) {
+        if (prop === WRAPPED) return true;
+        if (prop === "index") return index;
+        const [outerIndex, innerIndex] = me.map[index];
+        target = me.registrants[outerIndex].getGamepad(innerIndex);
+        return target[prop];
       },
-      [Symbol.iterator]: () => iterator
-    };
+      has(target, prop) {
+        if (prop === WRAPPED) return true;
+        const [outerIndex, innerIndex] = me.map[index];
+        target = me.registrants[outerIndex].getGamepad(innerIndex);
+        return prop in target;
+      }
+    });
+  },
 
-    return iterator;
-  };
-
-  const isArrayIndex = function(p) {
-    /* an array index is a property such that
-       ToString(ToUint32(p)) === p and ToUint(p) !== 2^32 - 1 */
-    const uint = p >>> 0;
-    const s = uint + "";
-    return p === s && uint !== 0xffffffff;
-  };
-
-  const proxy = new Proxy([], {
+  gamepads: new Proxy(proxies, {
     set: () => false,
-    get(target, prop, receiver) {
-      if (prop === WRAPPED) return true;
-      //if (prop === Symbol.iterator) return makeIterator();
-      if (prop === "length") return length;
-      if (isArrayIndex(prop) && prop < length) return getItem(prop);
-      return target[prop];
-    },
-    has: (target, prop) =>
-      prop === Symbol.iterator
-      || prop === "length"
-      || (isArrayIndex(prop) && prop < length)
-      || target[prop]
-  });
+    get: (target, prop, receiver) => (prop === WRAPPED) ? true : target[prop],
+    has: (target, prop) => prop === WRAPPED || prop in target,
+  }),
 
-  const getGamepads = () => proxy;
-  getGamepads[WRAPPED] = true;
-  getGamepads.proxyGamepad = proxyGamepad;
+  getGamepads() {
+    return this.gamepads;
+  }
+};
 
-  return getGamepads;
-}
-
-window.navigator.getGamepads = makeGetGamepads(window.navigator);
-
-for (const type of ["gamepadconnected", "gamepaddisconnected"]) {
-  window.addEventListener(type, (e) => {
-    if (e.gamepad[WRAPPED]) return;
-
-    e.stopImmediatePropagation();
-    const event = new Event(type);
-    event.gamepad = window.navigator.getGamepads.proxyGamepad(e.gamepad);
-    window.dispatchEvent(event);
-  });
-}
+Gamepads.attach(window);
