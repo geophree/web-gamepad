@@ -1,7 +1,7 @@
 const WRAPPED = Symbol('WRAPPED');
 
 const proxies = [];
-const Gamepads = {
+export const Gamepads = {
   win: null,
   registrants: [],
   proxies,
