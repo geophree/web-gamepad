@@ -133,6 +133,7 @@ template.innerHTML = `
     <use id="arrows45" href="#arrows"/>
     <circle id="nubbin" cx="5" cy="5"/>
   </g>
+</svg>
 `;
 
 window.customElements.define('thumbstick-input', ThumbstickInput);
