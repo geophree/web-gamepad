@@ -36,12 +36,12 @@ export class ThumbstickInput extends HTMLElement {
 
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
+    const root = this.attachShadow({ mode: 'open' });
+    root.appendChild(template.content.cloneNode(true));
 
-    this.$thumbstick = this.shadowRoot.querySelector("#thumbstick");
+    this.$thumbstick = root.querySelector("#thumbstick");
     let pointerId;
-    this.$nubbin = this.shadowRoot.querySelector("#nubbin");
+    this.$nubbin = root.querySelector("#nubbin");
     this._updateDimensions();
 
     let recordXY = ((e) => {

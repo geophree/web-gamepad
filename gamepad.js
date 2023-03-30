@@ -109,8 +109,7 @@ export class GamepadInput extends HTMLElement {
   constructor() {
     super();
     const me = this;
-    me.attachShadow({ mode: 'open' });
-    const root = me.shadowRoot;
+    const root = me.attachShadow({ mode: 'open' });
     root.appendChild(template.content.cloneNode(true));
     me.$buttonsInput = root.querySelector('button-cluster-input');
     me.$thumbstickInputs = root.querySelectorAll('thumbstick-input');

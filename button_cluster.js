@@ -33,10 +33,10 @@ export class ButtonClusterInput extends HTMLElement {
 
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
+    const root = this.attachShadow({ mode: 'open' });
+    root.appendChild(template.content.cloneNode(true));
 
-    const cluster = this.shadowRoot.querySelector("#cluster");
+    const cluster = root.querySelector("#cluster");
     // remove implicit capture for button area so you can roll from one
     // button to another without lifting your finger:
     cluster.addEventListener('gotpointercapture', (e) => {
@@ -45,7 +45,7 @@ export class ButtonClusterInput extends HTMLElement {
 
     let i = 0;
     const me = this;
-    this.$buttons = Array.from(this.shadowRoot.querySelectorAll('#buttons > *'));
+    this.$buttons = Array.from(root.querySelectorAll('#buttons > *'));
     this.$buttons.forEach((e) => {
       let index = i;
       const down = (e) => {

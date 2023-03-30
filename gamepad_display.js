@@ -60,9 +60,9 @@ export class GamepadDisplay extends HTMLElement {
 
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
-    const sel = (s) => this.shadowRoot.querySelector(s);
+    const root = this.attachShadow({ mode: 'open' });
+    root.appendChild(template.content.cloneNode(true));
+    const sel = (s) => root.querySelector(s);
     this.$body = sel('#body');
     this.$stems = [sel('#leftstem'), sel('#rightstem')];
     this.$buttons = Array.from(sel('#buttons').children);
