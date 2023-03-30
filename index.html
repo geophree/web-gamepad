@@ -43,10 +43,35 @@
   -->
   </div>
 
+  <script src="https://unpkg.com/qrcode@1.5.1/build/qrcode.js"></script>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.js"></script>
   <script type="module">
     import { Gamepads } from './get_gamepads.js';
     import './gamepad.js';
     import './gamepad_display.js';
+    import './qr.js';
+    console.log(document.defaultView.QRCode);
+    const letters = 'BCDFGHJKLMNPQRSTVWXZ';
+    const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
+    const loc = document.location;
+    const params = new URLSearchParams(loc.hash.substr(1));
+
+    let roomCode = params.get('rc');
+    const isClient = roomCode != null;
+    if (isClient) {
+    } else {
+      roomCode = Array.from({ length: 4 }, getLetter).join('');
+      const clientUrl = new URL(loc);
+      clientUrl.hash = '?rc=' + roomCode;
+      const qr = document.createElement('url-qr-code');
+      qr.href = clientUrl.toString();
+      document.body.appendChild(qr);
+    }
+
+    const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
+      .map(x => x.toString(16).padStart(2, '0'))
+      .join('');
+    console.log({ isClient, roomCode, peerId });
 
     {
       const gamepadInputs = document.querySelectorAll('gamepad-input');
