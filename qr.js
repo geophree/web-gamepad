@@ -22,7 +22,6 @@ export class URLQRCode extends HTMLElement {
   async attributeChangedCallback(attrName, oldVal, newVal) {
     if (attrName === 'href') {
       const href = newVal.toString();
-      console.log({ href });
       this.$text.textContent = href;
       this.$a.setAttribute('href', href);
       const QRCode = this.ownerDocument.defaultView.QRCode;
@@ -47,6 +46,15 @@ export class URLQRCode extends HTMLElement {
 
 const template = document.createElement('template');
 template.innerHTML = `
+<style>
+:host {
+  display: inline-block;
+}
+svg {
+  height: 100%;
+  width: 100%;
+}
+</style>
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <style>
     image {
@@ -61,7 +69,7 @@ template.innerHTML = `
   </style>
   <a>
   <image width="100" height="100" />
-  <text x="50%" y="5"></text>
+  <text x="50%" y="7"></text>
   </a>
 </svg>
 `;

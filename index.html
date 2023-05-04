@@ -23,6 +23,10 @@
       max-height: 100%;
       max-width: 100%;
     }
+    url-qr-code {
+      position: absolute;
+      inset: 0;
+    }
   </style>
 </head>
 <body style="background: lightblue;">
@@ -58,7 +62,6 @@
     import './gamepad.js';
     import './gamepad_display.js';
     import './qr.js';
-    console.log(document.defaultView.QRCode);
     const letters = 'BCDFGHJKLMNPQRSTVWXZ';
     const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
     const loc = document.location;
