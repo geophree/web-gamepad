@@ -2,6 +2,9 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
   <style>
+    body  {
+      margin: 0;
+    }
     thumbstick-input, button-cluster-input {
       display: block;
       width: 4cm;
@@ -15,13 +18,18 @@
       display: block;
       width: 12cm;
     }
+    gamepad-input {
+      height: 100%;
+      max-height: 100%;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body style="background: lightblue;">
-  <gamepad-display></gamepad-display>
-  <gamepad-display></gamepad-display>
-  <gamepad-input></gamepad-input>
   <!--
+  <gamepad-display></gamepad-display>
+  <gamepad-display></gamepad-display>
+  <gamepad-input overlap></gamepad-input>
    <div style="font-size: 10vh">
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
@@ -59,13 +67,27 @@
     let roomCode = params.get('rc');
     const isClient = roomCode != null;
     if (isClient) {
+      const pad = document.createElement('gamepad-input');
+      document.body.appendChild(pad);
     } else {
+      const pad = document.createElement('gamepad-input');
+      pad.overlap = '';
+      document.body.appendChild(pad);
       roomCode = Array.from({ length: 4 }, getLetter).join('');
       const clientUrl = new URL(loc);
       clientUrl.hash = '?rc=' + roomCode;
       const qr = document.createElement('url-qr-code');
       qr.href = clientUrl.toString();
       document.body.appendChild(qr);
+      const style = document.createElement('style');
+      style.textContent = `
+      gamepad-input {
+        position: absolute;
+        height: 10vmin;
+        width: 10vmin;
+        border-radius: 50%;
+      }`;
+      document.head.appendChild(style);
     }
 
     const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]

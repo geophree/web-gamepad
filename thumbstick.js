@@ -75,6 +75,12 @@ export class ThumbstickInput extends HTMLElement {
 
 const template = document.createElement('template');
 template.innerHTML = `
+<style>
+svg {
+  height: 100%;
+  width: 100%;
+}
+</style>
 <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
   <style>
     * {

@@ -4,6 +4,7 @@ import './button_cluster.js';
 export class GamepadInput extends HTMLElement {
   $thumbstickInputs;
   $buttonsInput;
+  $div;
   pauseEvents = false;
   sendEventAfterPause = false;
   _value = {
@@ -13,6 +14,29 @@ export class GamepadInput extends HTMLElement {
     buttons: [],
     axes: []
   };
+
+  static get observedAttributes() {
+    return ['overlap'];
+  }
+
+  get overlap() {
+    const overlap = this.getAttribute('overlap');
+    return !!overlap || overlap === '';
+  }
+
+  set overlap(val) {
+    if (val || val === '') {
+      this.setAttribute('overlap', val);
+    } else {
+      this.removeAttribute('overlap');
+    }
+  }
+
+  async attributeChangedCallback(attrName, oldVal, newVal) {
+    if (attrName === 'overlap') {
+      this.$div.classList.toggle('overlap', this.overlap);
+    }
+  }
 
   get value() {
     return this._value;
@@ -113,6 +137,7 @@ export class GamepadInput extends HTMLElement {
     root.appendChild(template.content.cloneNode(true));
     me.$buttonsInput = root.querySelector('button-cluster-input');
     me.$thumbstickInputs = root.querySelectorAll('thumbstick-input');
+    me.$div = root.querySelector('div');
 
     // TODO: allow for different configurations
     // TODO: rumble?
@@ -161,11 +186,31 @@ export class GamepadInput extends HTMLElement {
 const template = document.createElement('template');
 template.innerHTML = `
 <style>
+:host {
+  display: block;
+}
 div {
   display: flex;
+  justify-content: space-between;
+}
+div, thumbstick-input, button-cluster-input {
+  height: inherit;
+  width: inherit;
+  max-width: inherit;
+  max-height: inherit;
 }
 div > * {
-  flex: 1;
+  /*flex: 1;*/
+  max-width: 100%;
+  max-height: 100%;
+}
+div.overlap {
+  display: block;
+  position: relative;
+}
+div.overlap > * {
+  position: absolute;
+  inset: 0;
 }
 </style>
 <div>
