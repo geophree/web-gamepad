@@ -135,6 +135,7 @@ export class GamepadInput extends HTMLElement {
     const me = this;
     const root = me.attachShadow({ mode: 'open' });
     root.appendChild(template.content.cloneNode(true));
+    customElements.upgrade(root);
     me.$buttonsInput = root.querySelector('button-cluster-input');
     me.$thumbstickInputs = root.querySelectorAll('thumbstick-input');
     me.$div = root.querySelector('div');
@@ -152,10 +153,9 @@ export class GamepadInput extends HTMLElement {
       const update = (e) => {
         e.stopPropagation();
         if (!me._updateButtons(0, e.target.value)) return;
-        this._dispatchInputEvent();
-
         me._value.connected = true;
         me._value.timestamp = performance.now();
+        this._dispatchInputEvent();
       };
 
       me.$buttonsInput.addEventListener('input', update);
@@ -169,10 +169,9 @@ export class GamepadInput extends HTMLElement {
         const update = (e) => {
           e.stopPropagation();
           if (!me._updateAxes(offset, e.target.value)) return;
-          this._dispatchInputEvent();
-
           me._value.connected = true;
           me._value.timestamp = performance.now();
+          this._dispatchInputEvent();
         };
 
         el.addEventListener('input', update);
