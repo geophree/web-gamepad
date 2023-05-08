@@ -73,24 +73,80 @@
       const pad = document.createElement('gamepad-input');
       document.body.appendChild(pad);
     } else {
-      const pad = document.createElement('gamepad-input');
-      pad.overlap = '';
-      document.body.appendChild(pad);
       roomCode = Array.from({ length: 4 }, getLetter).join('');
       const clientUrl = new URL(loc);
       clientUrl.hash = '?rc=' + roomCode;
       const qr = document.createElement('url-qr-code');
       qr.href = clientUrl.toString();
       document.body.appendChild(qr);
+
       const style = document.createElement('style');
       style.textContent = `
       gamepad-input {
         position: absolute;
+        inset: 0;
+        transform: translate(calc(var(--x, 0) * 1px), calc(var(--y, 0) * 1px));
         height: 10vmin;
         width: 10vmin;
         border-radius: 50%;
       }`;
       document.head.appendChild(style);
+
+      window.addEventListener('gamepadconnected', (e) => {
+        const padDisplay = document.createElement('gamepad-input');
+        padDisplay.overlap = '';
+        padDisplay.style.background = '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+        padDisplay.value = e.gamepad;
+        document.body.appendChild(padDisplay);
+
+        const disconnect = ({gamepad}) => {
+          if (padDisplay.value.index !== gamepad.index) return;
+          padDisplay.remove();
+          padDisplay.value = gamepad;
+          window.removeEventListener('gamepaddisconnected', disconnect);
+        };
+        window.addEventListener('gamepaddisconnected', disconnect);
+
+        let lastUpdate = Date.now();
+        let x = 0;
+        let y = 0;
+        let lastPadTimestamp = Date.now();
+        const updateDisplay = () => {
+          if (!padDisplay.value.connected) return;
+          const gamepad = navigator.getGamepads()[padDisplay.value.index];
+          if (!gamepad?.connected) return;
+          const timestamp = gamepad?.timestamp;
+          if (timestamp != lastPadTimestamp) {
+            padDisplay.value = gamepad;
+            lastPadTimestamp = timestamp;
+          }
+          const currentTime = Date.now();
+          const deltaTime = currentTime - lastUpdate;
+
+          const deadZone = (axis) =>
+            Math.sign(axis) * Math.max(Math.abs(axis) - .1, 0) / .9;
+          let xAxis = deadZone(gamepad.axes[0]);
+          let yAxis = deadZone(gamepad.axes[1]);
+          if (xAxis**2 + yAxis**2 > 1) {
+            let theta = Math.atan(yAxis / xAxis);
+            let sign = Math.sign(xAxis);
+            xAxis = sign * Math.cos(theta);
+            yAxis = sign * Math.sin(theta);
+          }
+
+          x += xAxis * deltaTime;
+          y += yAxis * deltaTime;
+          const maxX = window.innerWidth - padDisplay.offsetWidth;
+          const maxY = window.innerHeight - padDisplay.offsetHeight;
+          x = (x < 0) ? 0 : (x > maxX) ? maxX : x;
+          y = (y < 0) ? 0 : (y > maxY) ? maxY : y;
+          padDisplay.style.setProperty('--x', x);
+          padDisplay.style.setProperty('--y', y);
+          lastUpdate = currentTime;
+          requestAnimationFrame(updateDisplay);
+        }
+        updateDisplay();
+      });
     }
 
     const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
