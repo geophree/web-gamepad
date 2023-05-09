@@ -154,6 +154,103 @@
       .join('');
     console.log({ isClient, roomCode, peerId });
 
+    if (isClient) {
+      const peer = new Peer();
+      peer.on('error', console.log);
+      peer.on('open', (id) => {
+        const conn = peer.connect(peerId);
+        window.peer = peer;
+        conn.on('error', console.log);
+        conn.on('open', () => {
+          conn.on('data', (data) => {
+            if (data?.type != 'background') return;
+            document.body.style.background = data.background;
+          });
+          const sentGamepads = [];
+          const target = new EventTarget();
+
+          const sendData = (force) => {
+            const gamepads = navigator.getGamepads();
+            let sendGamepads = force;
+            for (const gamepad of gamepads) {
+              const i = gamepad.index;
+              sentGamepads[i] ??= {};
+              const sentGamepad = sentGamepads[i];
+              if (sentGamepad.timestamp >= gamepad.timestamp) continue;
+              sendGamepads = true;
+              for (const prop of ['axes', 'connected', 'id', 'index', 'mapping', 'timestamp']) {
+                const val = gamepad[prop];
+                if (val !== undefined) sentGamepad[prop] = val;
+              }
+              if (gamepad.buttons) {
+                sentGamepad.buttons = gamepad.buttons.map(
+                  ({pressed, touched, value}) => ({pressed, touched, value})
+                );
+              }
+            }
+            if (sendGamepads) {
+              conn.send({type: 'gamepads', timestamp: Date.now(), gamepads: sentGamepads});
+            }
+          }
+
+          document.querySelectorAll('gamepad-input').forEach((el, index) => {
+            el.addEventListener('input', () => sendData());
+          });
+
+          const sendDataOnAnimationFrame = () => {
+            sendData(true);
+            requestAnimationFrame(sendDataOnAnimationFrame);
+          }
+          sendData();
+        });
+      });
+    } else {
+      const peer = new Peer(peerId);//, {debug: 3});
+      window.peer = peer;
+      peer.on('error', console.log);
+      peer.on('connection', (conn) => {
+        conn.on('error', console.log);
+        conn.on('open', () => {
+          let heldGamepads = [];
+          let heldTimestamp = 0;
+          const target = new EventTarget();
+          Gamepads.register(target, () => heldGamepads);
+
+          conn.on('data', (data) => {
+            if (data?.type != 'gamepads' || data.timestamp <= heldTimestamp) return;
+            const oldGamepads = heldGamepads;
+            heldTimestamp = data.timestamp;
+            heldGamepads = data.gamepads;
+            for (const gamepad of heldGamepads) {
+              const { index, connected } = gamepad;
+              const oldGamepad = oldGamepads[index];
+              if (oldGamepad?.connected === connected) continue;
+              const eventName = (connected) ? 'gamepadconnected' : 'gamepaddisconnected';
+              const event = new Event(eventName);
+              event.gamepad = gamepad;
+              target.dispatchEvent(event);
+            }
+          });
+          conn.on('close', () => {
+            console.log('connection close');
+            for (const gamepad of heldGamepads) {
+              gamepad.connected = false;
+            }
+            for (const gamepad of heldGamepads) {
+              const event = new Event('gamepaddisconnected');
+              event.gamepad = gamepad;
+              target.dispatchEvent(event);
+            }
+          });
+          conn.peerConnection.addEventListener("connectionstatechange", (event) => {
+            if (conn.peerConnection.connectionState === 'disconnected') {
+              conn.close();
+            }
+          });
+        });
+      });
+    }
+
     {
       const gamepadInputs = document.querySelectorAll('gamepad-input');
       const target = new EventTarget();
