@@ -95,7 +95,7 @@
       window.addEventListener('gamepadconnected', (e) => {
         const padDisplay = document.createElement('gamepad-input');
         padDisplay.overlap = '';
-        padDisplay.style.background = '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+        padDisplay.style.background = `hsl(${Math.random()}turn,100%,65%)`;
         padDisplay.value = e.gamepad;
         document.body.appendChild(padDisplay);
 
