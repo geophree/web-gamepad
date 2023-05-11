@@ -36,7 +36,7 @@ export class ButtonClusterInput extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     root.appendChild(template.content.cloneNode(true));
 
-    const cluster = root.querySelector("#cluster");
+    const cluster = root.querySelector('#cluster');
     // remove implicit capture for button area so you can roll from one
     // button to another without lifting your finger:
     cluster.addEventListener('gotpointercapture', (e) => {
@@ -46,17 +46,25 @@ export class ButtonClusterInput extends HTMLElement {
     let i = 0;
     const me = this;
     this.$buttons = Array.from(root.querySelectorAll('#buttons > *'));
-    this.$buttons.forEach((e) => {
+    this.$buttons.forEach((el) => {
       let index = i;
       const down = (e) => {
         if (e.buttons & 1) me._updateOne(index, e.pressure);
       };
-      e.addEventListener('pointerenter', down);
-      e.addEventListener('pointermove', down);
-      e.addEventListener('pointerdown', down);
+      el.addEventListener('pointerenter', down);
+      el.addEventListener('pointermove', down);
+      el.addEventListener('pointerdown', down);
+
       const up = (e) => me._updateOne(index, 0);
-      e.addEventListener('pointerout', up);
-      e.addEventListener('pointerup', up);
+      el.addEventListener('pointerout', up);
+      el.addEventListener('pointerup', up);
+
+      // remove implicit capture for button area so you can roll from one
+      // button to another without lifting your finger:
+      el.addEventListener('gotpointercapture', (e) => {
+        e.target.releasePointerCapture(e.pointerId);
+      });
+
       i++;
     });
     this.value = [0, 0, 0, 0];
@@ -83,7 +91,7 @@ svg {
     #cluster {
       opacity: .5;
     }
-    /*#cluster,*/ #buttons circle {
+    #cluster, #buttons circle {
       pointer-events: auto;
     }
     #buttons > :nth-child(1) {

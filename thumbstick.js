@@ -1,8 +1,7 @@
 export class ThumbstickInput extends HTMLElement {
   $thumbstick;
   $nubbin;
-  _width;
-  _height;
+  _boundingRect;
   _value = [0, 0];
 
   get value() {
@@ -29,9 +28,7 @@ export class ThumbstickInput extends HTMLElement {
   }
 
   _updateDimensions() {
-    let {width, height} = this.$thumbstick.getBoundingClientRect();
-    this._width = width;
-    this._height = height;
+    this._boundingRect = this.$thumbstick.getBoundingClientRect();
   }
 
   constructor() {
@@ -46,8 +43,9 @@ export class ThumbstickInput extends HTMLElement {
 
     let recordXY = ((e) => {
       if (pointerId != e.pointerId) return;
-      let horiz = 2 * (e.offsetX / this._width) - 1;
-      let vert = 2 * (e.offsetY / this._height) - 1;
+      let { x, y, width, height } = this._boundingRect;
+      let horiz = 2 * ((e.x - x) / width) - 1;
+      let vert = 2 * ((e.y - y) / height) - 1;
       this.value = [horiz, vert];
       e.stopPropagation();
       e.preventDefault();
