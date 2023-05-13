@@ -79,7 +79,7 @@ export const Gamepads = {
         if (prop === "index") return index;
         const [outerIndex, innerIndex] = me.map[index];
         target = me.registrants[outerIndex].getGamepad(innerIndex);
-        return target[prop];
+        return target?.[prop];
       },
       has(target, prop) {
         if (prop === WRAPPED) return true;
