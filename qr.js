@@ -4,7 +4,7 @@ export class URLQRCode extends HTMLElement {
   $a;
 
   static get observedAttributes() {
-    return ['href'];
+    return ['href', 'showurl'];
   }
 
   get href() {
@@ -19,17 +19,35 @@ export class URLQRCode extends HTMLElement {
     }
   }
 
+  get showurl() {
+    const showurl = this.getAttribute('showurl');
+    return !!showurl || showurl === '';
+  }
+
+  set showurl(val) {
+    if (val || val === '') {
+      this.setAttribute('showurl', val);
+    } else {
+      this.removeAttribute('showurl');
+    }
+  }
+
   async attributeChangedCallback(attrName, oldVal, newVal) {
-    if (attrName === 'href') {
-      const href = newVal.toString();
-      this.$text.textContent = href;
-      this.$a.setAttribute('href', href);
-      const QRCode = this.ownerDocument.defaultView.QRCode;
-      if (!QRCode) {
-        this.$text.textContent = "Requires QRCode library";
-      } else {
-        this.$image.setAttribute('href',  await QRCode.toDataURL(href));
-      }
+    switch (attrName) {
+      case 'href':
+        const href = newVal.toString();
+        this.$text.textContent = this.showurl ? href : '';
+        this.$a.setAttribute('href', href);
+        const QRCode = this.ownerDocument.defaultView.QRCode;
+        if (!QRCode) {
+          this.$text.textContent = "Requires QRCode library";
+        } else {
+          this.$image.setAttribute('href', await QRCode.toDataURL(href));
+        }
+        break;
+      case 'showurl':
+        this.$text.textContent = this.showurl ? this.href : '';
+        break;
     }
   }
 

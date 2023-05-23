@@ -1,3 +1,23 @@
+
+// {
+//   const displays = Array.from(document.querySelectorAll('gamepad-display'));
+//   const $extras = document.querySelector('#extras');
+//   displays.forEach((display, i) => {
+//     let lastTimestamp = 0;
+//     const updateDisplay = () => {
+//       const gamepad = navigator.getGamepads()[i];
+//       const timestamp = gamepad?.timestamp;
+//       if (timestamp != lastTimestamp) {
+//         const extras = display.updateState(gamepad) || [];
+//         // $extras.innerHTML = extras.map(e => e.join(': ')).join('<br/>');
+//         lastTimestamp = timestamp;
+//       }
+//       requestAnimationFrame(updateDisplay);
+//     }
+//     updateDisplay();
+//   });
+// }
+ 
 export class GamepadDisplay extends HTMLElement {
   $body;
   $stems;

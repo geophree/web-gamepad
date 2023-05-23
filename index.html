@@ -17,10 +17,6 @@
         width: 8cm;
       }
     }
-    gamepad-display {
-      display: block;
-      width: 12cm;
-    }
     gamepad-input {
       height: 100%;
       max-height: 100%;
@@ -34,9 +30,6 @@
 </head>
 <body style="background: lightblue;">
   <!--
-  <gamepad-display></gamepad-display>
-  <gamepad-display></gamepad-display>
-  <gamepad-input overlap></gamepad-input>
    <div style="font-size: 10vh">
     x: <span class="x"></span><br/>
     y: <span class="y"></span><br/>
@@ -46,8 +39,6 @@
     g: <span class="g"></span><br/>
     abs: <span class="abs"></span><br/>
   </div>
-  <gamepad-display></gamepad-display>
-  <gamepad-display></gamepad-display>
   <div style="font-size: 10vh">
     a: <span class="a"></span><br/>
     b: <span class="b"></span><br/>
@@ -61,26 +52,23 @@
   <script src="https://unpkg.com/qrcode@1.5.1/build/qrcode.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.js"></script>
   <script type="module">
-    import { Gamepads } from './get_gamepads.js';
     import './gamepad.js';
-    import './gamepad_display.js';
-    import './qr.js';
+    import './wakelock.js';
+    import { startHost } from './host.js';
+    import { startPlayer } from './player.js';
+
     const letters = 'BCDFGHJKLMNPQRSTVWXZ';
     const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
     const loc = document.location;
     const params = new URLSearchParams(loc.hash.substr(1));
 
     let roomCode = params.get('rc');
-    const isClient = roomCode != null;
-    if (isClient) {
-      const pad = document.createElement('gamepad-input');
-      document.body.appendChild(pad);
+    const isPlayer = roomCode != null;
+    if (isPlayer) {
+      await startPlayer(roomCode);
     } else {
-      roomCode = Array.from({ length: 4 }, getLetter).join('');
-      const clientUrl = new URL(loc);
-      clientUrl.hash = '?rc=' + roomCode;
-      const qr = document.createElement('url-qr-code');
-      qr.href = clientUrl.toString();
+      const qr = await startHost();
+      qr.showurl = '';
       document.body.appendChild(qr);
 
       const style = document.createElement('style');
@@ -152,159 +140,6 @@
       });
     }
 
-    if (roomCode) {
-      const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
-        .map(x => x.toString(16).padStart(2, '0'))
-        .join('');
-      if (isClient) {
-        const peer = new Peer();
-        peer.on('error', console.log);
-        peer.on('open', (id) => {
-          if (!peerId) return;
-          const conn = peer.connect(peerId);
-          window.peer = peer;
-          conn.on('error', console.log);
-          conn.on('open', () => {
-            conn.on('data', (data) => {
-              if (data?.type != 'background') return;
-              document.body.style.background = data.background;
-            });
-            const sentGamepads = [];
-            const target = new EventTarget();
-
-            const sendData = (force) => {
-              const gamepads = navigator.getGamepads();
-              let sendGamepads = force;
-              for (const gamepad of gamepads) {
-                const i = gamepad.index;
-                sentGamepads[i] ??= {};
-                const sentGamepad = sentGamepads[i];
-                if (sentGamepad.timestamp >= gamepad.timestamp) continue;
-                sendGamepads = true;
-                for (const prop of ['axes', 'connected', 'id', 'index', 'mapping', 'timestamp']) {
-                  const val = gamepad[prop];
-                  if (val !== undefined) sentGamepad[prop] = val;
-                }
-                if (gamepad.buttons) {
-                  sentGamepad.buttons = gamepad.buttons.map(
-                    ({pressed, touched, value}) => ({pressed, touched, value})
-                  );
-                }
-              }
-              if (sendGamepads) {
-                conn.send({type: 'gamepads', timestamp: Date.now(), gamepads: sentGamepads});
-              }
-            }
-
-            document.querySelectorAll('gamepad-input').forEach((el, index) => {
-              el.addEventListener('input', () => sendData());
-            });
-
-            const sendDataOnAnimationFrame = () => {
-              sendData(true);
-              requestAnimationFrame(sendDataOnAnimationFrame);
-            }
-            sendData();
-          });
-        });
-      } else {
-        const peer = new Peer(peerId);//, {debug: 3});
-        window.peer = peer;
-        peer.on('error', console.log);
-        peer.on('connection', (conn) => {
-          conn.on('error', console.log);
-          conn.on('open', () => {
-            let heldGamepads = [];
-            let heldTimestamp = 0;
-            const target = new EventTarget();
-            Gamepads.register(target, () => heldGamepads);
-
-            conn.on('data', (data) => {
-              if (data?.type != 'gamepads' || data.timestamp <= heldTimestamp) return;
-              const oldGamepads = heldGamepads;
-              heldTimestamp = data.timestamp;
-              heldGamepads = data.gamepads;
-              for (const gamepad of heldGamepads) {
-                const { index, connected } = gamepad;
-                const oldGamepad = oldGamepads[index];
-                if (oldGamepad?.connected === connected) continue;
-                const eventName = (connected) ? 'gamepadconnected' : 'gamepaddisconnected';
-                const event = new Event(eventName);
-                event.gamepad = gamepad;
-                target.dispatchEvent(event);
-              }
-            });
-            conn.on('close', () => {
-              console.log('connection close');
-              for (const gamepad of heldGamepads) {
-                gamepad.connected = false;
-              }
-              for (const gamepad of heldGamepads) {
-                const event = new Event('gamepaddisconnected');
-                event.gamepad = gamepad;
-                target.dispatchEvent(event);
-              }
-            });
-            conn.peerConnection.addEventListener("connectionstatechange", (event) => {
-              if (conn.peerConnection.connectionState === 'disconnected') {
-                conn.close();
-              }
-            });
-          });
-        });
-      }
-    }
-
-    {
-      const gamepadInputs = document.querySelectorAll('gamepad-input');
-      const target = new EventTarget();
-
-      gamepadInputs.forEach((el, index) => {
-        el.value = { index };
-
-        const sendConnected = (e) => {
-          if (!e.target.value.connected) return;
-
-          el.removeEventListener('input', sendConnected);
-          const event = new Event('gamepadconnected');
-          event.gamepad = e.target.value;
-          target.dispatchEvent(event);
-        };
-
-        el.addEventListener('input', sendConnected);
-      });
-
-      Gamepads.register(target, () => Array.from(gamepadInputs, el => el.value));
-    }
-
-    // // connect first web gamepad to second.
-    // const gamepadInputs = document.querySelectorAll('gamepad-input');
-    // gamepadInputs[0]?.addEventListener('input', (e) => {
-    //   if (gamepadInputs[1]) {
-    //     const { index } = gamepadInputs[1].value;
-    //     gamepadInputs[1].value = {...e.target.value, index};
-    //   }
-    // });
-
-    {
-      const displays = Array.from(document.querySelectorAll('gamepad-display'));
-      const $extras = document.querySelector('#extras');
-      displays.forEach((display, i) => {
-        let lastTimestamp = 0;
-        const updateDisplay = () => {
-          const gamepad = navigator.getGamepads()[i];
-          const timestamp = gamepad?.timestamp;
-          if (timestamp != lastTimestamp) {
-            const extras = display.updateState(gamepad) || [];
-            // $extras.innerHTML = extras.map(e => e.join(': ')).join('<br/>');
-            lastTimestamp = timestamp;
-          }
-          requestAnimationFrame(updateDisplay);
-        }
-        updateDisplay();
-      });
-    }
- 
     // Doesn't work unless HTTPS, (*\.)?localhost, 127.0.0.1, or file:// urls
     // 0.0.0.0 does *not* work.
     if (false) {
@@ -343,24 +178,6 @@
       updateDisplay();
     }
 
-    {
-      // stop device from sleeping
-      let wakeLock = null;
-      const requestWakeLock = async () => {
-        if (wakeLock !== null || document.visibilityState !== 'visible') {
-          return;
-        }
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-          wakeLock.addEventListener('release', () => wakeLock = null);
-        } catch (err) {
-          console.log(err);
-        }
-      }
-      document.addEventListener('visibilitychange', requestWakeLock);
-      requestWakeLock();
-    }
-    
     // for full gamepad:
     // if navigator.maxTouchPoints <= 1,
     // alert user that they won't have a great experience
