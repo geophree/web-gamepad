@@ -57,14 +57,9 @@
     import { startHost } from './host.js';
     import { startPlayer } from './player.js';
 
-    const letters = 'BCDFGHJKLMNPQRSTVWXZ';
-    const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
-    const loc = document.location;
-    const params = new URLSearchParams(loc.hash.substr(1));
-
-    let roomCode = params.get('rc');
-    const isPlayer = roomCode != null;
-    if (isPlayer) {
+    const params = new URLSearchParams(document.location.hash.substr(1));
+    const roomCode = params.get('rc');
+    if (roomCode != null) {
       await startPlayer(roomCode);
     } else {
       const qr = await startHost();
