@@ -48,21 +48,16 @@
   <div id="extras" style="font-size: 2vw; font-family: sans">
   -->
   </div>
-
-  <script src="https://unpkg.com/qrcode@1.5.1/build/qrcode.js"></script>
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.js"></script>
   <script type="module">
     import './gamepad.js';
     import './wakelock.js';
-    import { startHost } from './host.js';
-    import { startPlayer } from './player.js';
 
     const params = new URLSearchParams(document.location.hash.substr(1));
     const roomCode = params.get('rc');
     if (roomCode != null) {
-      await startPlayer(roomCode);
+      await (await import('./player.js')).startPlayer(roomCode);
     } else {
-      const qr = await startHost();
+      const qr = await (await import('./host.js')).startHost(document.location);
       qr.showurl = '';
       document.body.appendChild(qr);
 

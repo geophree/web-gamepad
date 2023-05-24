@@ -1,6 +1,7 @@
-import { Gamepads } from './get_gamepads.js';
 import './gamepad.js';
 import './wakelock.js';
+import { Gamepads } from './get_gamepads.js';
+import { Peer } from './peer.js';
 
 export async function startPlayer(roomCode) {
   const pad = document.createElement('gamepad-input');
@@ -21,6 +22,12 @@ export async function startPlayer(roomCode) {
         if (data?.type != 'background') return;
         document.body.style.background = data.background;
       });
+      // // TODO(geophree): find a way to make this work
+      // // maybe we also want to do it on visibility change?
+      // window.addEventListener('beforeunload', () => {
+      //   conn.dataChannel.close();
+      //   conn.close();
+      // });
       const sentGamepads = [];
       const target = new EventTarget();
 

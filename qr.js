@@ -38,7 +38,17 @@ export class URLQRCode extends HTMLElement {
         const href = newVal.toString();
         this.$text.textContent = this.showurl ? href : '';
         this.$a.setAttribute('href', href);
-        const QRCode = this.ownerDocument.defaultView.QRCode;
+        const doc = this.ownerDocument;
+        let QRCode = doc.defaultView.QRCode;
+        if (!QRCode) {
+          QRCode = await new Promise((res, rej) => {
+            const script = doc.createElement('script');
+            script.onload = () => res(doc.defaultView.QRCode);
+            script.onerror = rej;
+            script.src = 'https://unpkg.com/qrcode@1.5.1/build/qrcode.js';
+            doc.body.appendChild(script);
+          });
+        }
         if (!QRCode) {
           this.$text.textContent = "Requires QRCode library";
         } else {
