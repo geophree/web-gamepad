@@ -7,7 +7,8 @@ const WEB_GAMEPAD_URL = 'https://geophree.github.io/web-gamepad/';
 const letters = 'BCDFGHJKLMNPQRSTVWXZ';
 const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
 
-export async function startHost(webGamepadUrl = WEB_GAMEPAD_URL) {
+export async function startHost(options) {
+  let { webGamepadUrl = WEB_GAMEPAD_URL } = options ?? {};
   let roomCode = Array.from({ length: 4 }, getLetter).join('');
   const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
     .map(x => x.toString(16).padStart(2, '0'))
@@ -58,10 +59,13 @@ export async function startHost(webGamepadUrl = WEB_GAMEPAD_URL) {
     });
   });
 
-  const playerUrl = new URL(webGamepadUrl);
-  playerUrl.hash = '?rc=' + roomCode;
-  const qr = document.createElement('url-qr-code');
-  qr.href = playerUrl.toString();
-
-  return qr;
+  return {
+    getQrCode() {
+      const playerUrl = new URL(webGamepadUrl);
+      playerUrl.hash = '?rc=' + roomCode;
+      const qr = document.createElement('url-qr-code');
+      qr.href = playerUrl.toString();
+      return qr;
+    }
+  };
 }

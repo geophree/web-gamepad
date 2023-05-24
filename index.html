@@ -57,7 +57,9 @@
     if (roomCode != null) {
       await (await import('./player.js')).startPlayer(roomCode);
     } else {
-      const qr = await (await import('./host.js')).startHost(document.location);
+      const webGamepadUrl = document.location;
+      const host = await (await import('./host.js')).startHost({ webGamepadUrl });
+      const qr = host.getQrCode();
       qr.showurl = '';
       document.body.appendChild(qr);
 
