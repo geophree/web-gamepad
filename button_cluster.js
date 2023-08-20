@@ -49,7 +49,8 @@ export class ButtonClusterInput extends HTMLElement {
     this.$buttons.forEach((el) => {
       let index = i;
       const down = (e) => {
-        if (e.buttons & 1) me._updateOne(index, e.pressure);
+        // in GNOME Web (WebKit), pressure is always 0.
+        if (e.buttons & 1) me._updateOne(index, e.pressure || 1);
       };
       el.addEventListener('pointerenter', down);
       el.addEventListener('pointermove', down);
@@ -80,11 +81,18 @@ svg {
 }
 </style>
 <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+  <filter id="invert">
+    <feColorMatrix in="SourceGraphic" type="matrix" values="-1 0 0 0 1
+                                                            0 -1 0 0 1
+                                                            0 0 -1 0 1
+                                                            0 0 0 1 0"/>
+  </filter>
   <style>
     * {
       pointer-events: none;
       touch-action: none;
       user-select: none;
+      -webkit-user-select: none;
       fill: black;
       --button-diameter: 33%;
     }
@@ -112,7 +120,8 @@ svg {
       transform: rotate(var(--angle)) translate(27%) rotate(calc(-1 * var(--angle))) scale(var(--button-diameter));
     }
     .pressed {
-      filter: invert(1);
+      /* GNOME Web (WebKit) doesn't like invert(1), use an svg filter instead. */
+      filter: url(#invert);
     }
     text {
       font-family: sans;
