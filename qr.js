@@ -89,7 +89,7 @@ svg {
       image-rendering: pixelated;
     }
     text {
-      font-family: sans;
+      font-family: sans-serif;
       text-anchor: middle;
       font-size: 5;
       dominant-baseline: top;

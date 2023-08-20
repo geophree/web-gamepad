@@ -124,7 +124,7 @@ svg {
       filter: url(#invert);
     }
     text {
-      font-family: sans;
+      font-family: sans-serif;
       font-weight: bold;
       text-anchor: middle;
       font-size: 6;
