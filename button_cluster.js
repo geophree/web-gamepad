@@ -93,14 +93,17 @@ svg {
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      fill: black;
+      fill: currentColor;
       --button-diameter: 33%;
+    }
+    circle {
+      pointer-events: auto;
     }
     #cluster {
       opacity: .5;
     }
-    #cluster, #buttons circle {
-      pointer-events: auto;
+    #buttons {
+      opacity: .75;
     }
     #buttons > :nth-child(1) {
       --angle: 90deg;
@@ -112,9 +115,9 @@ svg {
       --angle: 180deg;
     }
     #buttons > :nth-child(4) {
-      --angle: -90deg;
+      --angle: 270deg;
     }
-    #buttons > * {
+    #buttons * {
       transform-origin: center;
       transform-box: fill-box;
       transform: rotate(var(--angle)) translate(27%) rotate(calc(-1 * var(--angle))) scale(var(--button-diameter));
@@ -123,34 +126,43 @@ svg {
       /* GNOME Web (WebKit) doesn't like invert(1), use an svg filter instead. */
       filter: url(#invert);
     }
-    text {
+    mask rect {
+      width: 100%;
+      height: 100%;
+      fill: white;
+    }
+    mask text {
       font-family: sans-serif;
       font-weight: bold;
       text-anchor: middle;
       font-size: 6;
       dominant-baseline: central;
-      fill: grey;
+      fill: black;
     }
   </style>
+  <mask id="A">
+    <rect/>
+    <text x="50%" y="50%">A</text>
+  </mask>
+  <mask id="B">
+    <rect/>
+    <text x="50%" y="50%">B</text>
+  </mask>
+  <mask id="X">
+    <rect/>
+    <text x="50%" y="50%">X</text>
+  </mask>
+  <mask id="Y">
+    <rect/>
+    <text x="50%" y="50%">Y</text>
+  </mask>
   <g style="opacity: .5">
     <circle id="cluster" cx="5" cy="5" r="5"/>
     <g id="buttons">
-      <g>
-        <circle cx="5" cy="5" r="5"/>
-        <text x="50%" y="50%">A</text>
-      </g>
-      <g>
-        <circle cx="5" cy="5" r="5"/>
-        <text x="50%" y="50%">B</text>
-      </g>
-      <g>
-        <circle cx="5" cy="5" r="5"/>
-        <text x="50%" y="50%">X</text>
-      </g>
-      <g>
-        <circle cx="5" cy="5" r="5"/>
-        <text x="50%" y="50%">Y</text>
-      </g>
+      <circle cx="5" cy="5" r="5" mask="url(#A)"/>
+      <circle cx="5" cy="5" r="5" mask="url(#B)"/>
+      <circle cx="5" cy="5" r="5" mask="url(#X)"/>
+      <circle cx="5" cy="5" r="5" mask="url(#Y)"/>
     </g>
   </g>
 </svg>

@@ -84,7 +84,7 @@ svg {
     * {
       pointer-events: none;
       touch-action: none;
-      fill: black;
+      fill: currentColor;
       --center-diameter: 40%;
       --arrow-width: 12%;
     }
