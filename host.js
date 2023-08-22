@@ -8,6 +8,12 @@ const letters = 'BCDFGHJKLMNPQRSTVWXZ';
 const getLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
 
 export async function startHost(options) {
+  if (!window.isSecureContext) {
+    console.error('web gamepad requires a secure context');
+    // tell user we require secure context
+    return;
+  }
+
   let { webGamepadUrl = WEB_GAMEPAD_URL } = options ?? {};
   let roomCode = Array.from({ length: 4 }, getLetter).join('');
   const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
@@ -16,9 +22,9 @@ export async function startHost(options) {
 
   const peer = new Peer(peerId);//, {debug: 3});
   window.peer = peer;
-  peer.on('error', console.log);
+  peer.on('error', console.error);
   peer.on('connection', (conn) => {
-    conn.on('error', console.log);
+    conn.on('error', console.error);
     conn.on('open', () => {
       let heldGamepads = [];
       let heldTimestamp = 0;

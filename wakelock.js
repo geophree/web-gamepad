@@ -5,11 +5,14 @@ const requestWakeLock = async () => {
     return;
   }
   try {
-    wakeLock = await navigator.wakeLock.request('screen');
-    wakeLock.addEventListener('release', () => wakeLock = null);
+    wakeLock = await navigator.wakeLock?.request('screen');
+    wakeLock?.addEventListener('release', () => wakeLock = null);
   } catch (err) {
-    console.log(err);
+    // Do nothing
   }
 }
-document.addEventListener('visibilitychange', requestWakeLock);
-requestWakeLock();
+
+if (window.isSecureContext) {
+  document.addEventListener('visibilitychange', requestWakeLock);
+  requestWakeLock();
+}

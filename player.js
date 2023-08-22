@@ -3,20 +3,42 @@ import './wakelock.js';
 import { Gamepads } from './get_gamepads.js';
 import { Peer } from './peer.js';
 
+function error(e) {
+  console.error(e);
+
+  const template = document.createElement('template');
+  template.innerHTML = `
+    <dialog open style="position: absolute; inset: 0; font: 3vw sans-serif; padding: .5em 1em; background-color: #D02; border: 0; color: #FFF; border-radius: .25em">
+      <p style="margin: 0">${e}</p>
+      <form method="dialog" style="margin: 0; position: absolute; inset: 0 0 auto auto">
+        <button style="all: unset; padding-right: .25em">&times;</button>
+      </form>
+    </dialog>
+  `;
+
+  document.body.append(template.content);
+}
+
 export async function startPlayer(roomCode) {
   const pad = document.createElement('gamepad-input');
   document.body.appendChild(pad);
+
+  if (!window.isSecureContext) {
+    error('web gamepad requires a secure context');
+    // tell user we require secure context
+    return;
+  }
 
   const peerId = [...new Uint8Array(await crypto.subtle.digest("SHA-1", new TextEncoder("utf-8").encode(roomCode)))]
     .map(x => x.toString(16).padStart(2, '0'))
     .join('');
   const peer = new Peer();
-  peer.on('error', console.log);
+  peer.on('error', error);
   peer.on('open', (id) => {
     if (!peerId) return;
     const conn = peer.connect(peerId);
     window.peer = peer;
-    conn.on('error', console.log);
+    conn.on('error', error);
     conn.on('open', () => {
       conn.on('data', (data) => {
         if (data?.type != 'background') return;
